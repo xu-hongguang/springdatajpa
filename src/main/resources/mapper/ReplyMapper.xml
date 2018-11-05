@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xhg.springdatajpa.dao.ReplyMapper">
+
+    <resultMap id="infoMap" type="Replies">
+        <id property="id" column="id"/>
+        <result column="content" property="content"/>
+        <result property="replyTime" column="replyTime"/>
+        <!--<result property="info" column="info"/>-->
+        <association property="infoId" javaType="informations">
+            <id column="id" property="id"/>
+            <result property="title" column="title"/>
+        </association>
+    </resultMap>
+
+    <select id="findAll" resultMap="infoMap">
+        SELECT r.id,r.content,r.replyTime,r.infoId,i.id,i.title FROM replies r
+        INNER JOIN informations i WHERE r.infoId = i.id
+    </select>
+</mapper>

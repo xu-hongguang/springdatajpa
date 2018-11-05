@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx.xsd
+        http://www.springframework.org/schema/aop
+        http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+    <!--自动装配-->
+    <context:component-scan base-package="com.xhg.springdatajpa"/>
+
+    <!--导入.properties文件-->
+    <context:property-placeholder location="classpath:db.properties"/>
+
+    <!--配置事务管理器-->
+    <!--<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>-->
+    <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
+        <property name="entityManagerFactory" ref="entityManagerFactory"/>
+    </bean>
+
+    <!--开启声明式事务-->
+    <!--<tx:annotation-driven/>-->
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+    <!-- 事务 -->
+    <tx:advice id="txAdvice" transaction-manager="transactionManager">
+        <tx:attributes>
+            <tx:method name="*" />
+            <tx:method name="get*" read-only="true" />
+            <tx:method name="find*" read-only="true" />
+            <tx:method name="select*" read-only="true" />
+            <tx:method name="delete*" propagation="REQUIRED" />
+            <tx:method name="update*" propagation="REQUIRED" />
+            <tx:method name="add*" propagation="REQUIRED" />
+            <tx:method name="insert*" propagation="REQUIRED" />
+        </tx:attributes>
+    </tx:advice>
+    <!-- 事务入口 -->
+    <aop:config>
+        <aop:pointcut id="allServiceMethod" expression="execution(* com.xhg.springdatajpa.*.*(..))" />
+        <aop:advisor pointcut-ref="allServiceMethod" advice-ref="txAdvice" />
+    </aop:config>
+
+
+    <!--数据源DBCP配置-->
+    <bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource"
+          p:driverClassName="${mysql.driver}"
+          p:username="${mysql.username}"
+          p:password="${mysql.password}"
+          p:maxIdle="30"
+          p:maxWaitMillis="10000"
+          p:url="${mysql.url}">
+    </bean>
+
+    <!-- 创建spring jdbcTemplate -->
+    <!--<bean class="org.springframework.jdbc.core.JdbcTemplate" id="jdbcTemplate">
+        <constructor-arg ref="dataSource"/>
+    </bean>-->
+
+    <!--sqlSessionFactory,注入数据源，载入MyBatis配置文件-->
+    <!--使用Spring整合Mybatis（Spring来创建管理Mybatis中的对象）
+       1)可以直接不使用Mybatis的配置文件，将相关的配置信息直接配置在当前的bean中
+       2)也可以使用configLocation属性，将原始的Mybatis配置文件直接导入当前的bean
+    -->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="mapperLocations" value="classpath:mapper/*.xml"/>
+        <property name="configLocation" value="classpath:mybatis-config.xml"/>
+    </bean>
+
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <!--使用sqlSessionFactory的beanName注入-->
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+        <!--指定所有接口文件所有的包-->
+        <property name="basePackage" value="com.xhg.springdatajpa.dao"/>
+    </bean>
+
+    <import resource="classpath:spring-data-jpa.xml"/>
+
+
+</beans>
